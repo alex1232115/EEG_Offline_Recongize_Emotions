@@ -16,7 +16,3 @@
 4. Scikit-learn <br />
 5. Seaborn <br />
 6. SciPy <br />
-
-<div id="header" align="center">
-  <img src="[https://media.giphy.com/media/Dh5q0sShxgp13DwrvG/giphy.gif](https://giphy.com/gifs/blue-white-brain-eljCVpMrhepUSgZaVP)" width="500"/>
-</div>
