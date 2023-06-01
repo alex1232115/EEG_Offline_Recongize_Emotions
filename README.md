@@ -3,7 +3,7 @@
 </h2>
 
 <h3>Configurations:</h3>
-1. DEAP and SEED datasets
+1. DEAP and SEED datasets  
 2. Preprocessed methods like downsampling, low-pass filter and etc
 3. Bandpower, spectral density were used for feature extractions in DEAP system; Entropy and wavelet energy in SEED system
 4. Arousal, valence and James Russell's model for emotion recognition in DEAP system; pre-set labels from developers in SEED system
