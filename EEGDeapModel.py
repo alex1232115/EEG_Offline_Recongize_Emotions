@@ -2,6 +2,7 @@ import os
 
 import mne
 import pandas as pd
+import scipy
 import scipy.io as spio
 import numpy as np
 import matplotlib.pyplot as plt
@@ -13,44 +14,36 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, classification_report
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.model_selection import train_test_split
-from sklearn.neural_network import MLPClassifier
 from sklearn.svm import SVC
 
 
-def preprocessing_data(path="C:/Users/alash/Desktop/4 курс/Diplom/program/datasets/DEAP/data_original/", ica_components=20):
+def preprocessing_data(file="C:/Users/alash/Desktop/4 курс/Diplom/program/datasets/DEAP/data_original/s01.bdf"):
     # set sampling frequency to 128 Hz
     sampling_freq = 128
     # create MNE info object
     info = mne.create_info(32, sfreq=sampling_freq)
 
-    # read raw data from file
-    raw = mne.io.read_raw_bdf(path + "s01.bdf", info, preload=True)
+    raw = mne.io.read_raw_bdf(file, preload=True)
+    raw.plot()
 
     # print information about the raw data
     print(raw.info)
-    raw.plot(duration=5, n_channels=32)
 
-    data = raw.copy()
-
-    # removing bad channels
-    data.info['bads'] = ['hEOG', 'vEOG', 'zEMG', 'tEMG', 'GSR']
-    data.interpolate_bads(reset_bads=False)
-
-    data.plot()
     #  bandpass frequency filter
-    data.filter.band_pass_filter(Fp1=4, Fp2=45, l_trans_bandwidth='auto', filter_length='auto')
+    raw_data = raw.filter(l_freq=4, h_freq=45, fir_design='firwin', l_trans_bandwidth='auto', filter_length='auto')
 
-    # Apply ICA
-    ica = mne.preprocessing.ICA(n_components=ica_components, random_state=97, max_iter=800)
-    ica.fit(data)
-    ica.exclude = [1, 2]
-    data = ica.apply(data)
+    ica = mne.preprocessing.ICA(n_components=20, random_state=0)
+    ica.fit(raw)
+    raw_data = ica.apply(raw)
 
     # plot data again after removing bad channels and interpolating
-    data.compute_psd(fmax=50).plot(picks="data", exclude="bads")
-    data.plot(duration=5, n_channels=62, block=True)
+    raw_data.compute_psd(fmax=50).plot(picks="data", exclude="bads")
+    raw_data.plot(block=True)
 
-    return data
+    data = scipy.io.loadmat('C:/Users/alash/Desktop/4 курс/Diplom/program/datasets/SEED_EEG/SEED_EEG/Preprocessed_EEG/1_20131027.mat')
+    print(data)
+
+    return raw
 
 
 def emotional_labeling(arousal, valence):
@@ -328,10 +321,10 @@ def classification_knn(eeg_band, labels):
     y_pred = knn.predict(X_test)
     accuracy = accuracy_score(y_test, y_pred)
 
-    print("Точность：", train_score)
+    print("Точность：", accuracy)
     report = classification_report(y_test, y_pred, zero_division=1)
     print(report)
-    return train_score
+    return accuracy
 
 
 def bandpower(data, sf, band):
@@ -418,27 +411,27 @@ def accuracy_compare_plot(result_rf, result_svm, result_knn):
 
 if __name__ == '__main__':
     # 1 Предварительная обработка данных
-    # preprocessing_data()
+    preprocessing_data()
     # 2 Выделение первоначальных датафреймов для eeg данных и признаков
     # labels_for_feature, data_for_feature = read_preprocessed_data()
     # 3 Выделение признаков из eeg данных на основе диапазона мощности каждого из сигналов
-    # eeg_band_data = feature_extraction(labels_for_feature, data_for_feature)
+    #eeg_band_data = feature_extraction(labels_for_feature, data_for_feature)
     # 4 Маркировка тренировочного набора arousal, valence соответствующими эмоциями
     # 1 - happy, 2 - angry, 3 - calm, 4 - sad.
     # labels_for_classification = create_labels(labels_for_feature)
     # 5 Классификация различными методам машинного обучения
     # данные берутся из заранее сохраненных результатов предыдущих методов для ускорения работ
-    labels_for_classification = 'datasets2/eeg_labels.npy'
-    eeg_band_data = 'datasets2/eeg_band.npy'
-
-    # classification with random_forest classificator
-    result_rf = random_forest_classifier(np.load(eeg_band_data, allow_pickle=True),
-                                          np.load(labels_for_classification, allow_pickle=True))
-    # classification with svm classificator
-    result_svm = svm_classifier(np.load(eeg_band_data, allow_pickle=True),
-                                 np.load(labels_for_classification, allow_pickle=True))
-    # classification with knn classificator
-    result_knn = classification_knn(np.load(eeg_band_data, allow_pickle=True),
-                                     np.load(labels_for_classification, allow_pickle=True))
-
-    accuracy_compare_plot(result_rf, result_svm, result_knn)
+    # labels_for_classification = 'datasets2/eeg_labels.npy'
+    # eeg_band_data = 'datasets2/eeg_band.npy'
+    #
+    # # classification with random_forest classificator
+    # result_rf = random_forest_classifier(np.load(eeg_band_data, allow_pickle=True),
+    #                                       np.load(labels_for_classification, allow_pickle=True))
+    # # classification with svm classificator
+    # result_svm = svm_classifier(np.load(eeg_band_data, allow_pickle=True),
+    #                              np.load(labels_for_classification, allow_pickle=True))
+    # # classification with knn classificator
+    # result_knn = classification_knn(np.load(eeg_band_data, allow_pickle=True),
+    #                                  np.load(labels_for_classification, allow_pickle=True))
+    #
+    # accuracy_compare_plot(result_rf, result_svm, result_knn)
